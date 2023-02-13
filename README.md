@@ -1,7 +1,7 @@
 RPLIDAR ROS package
 =====================================================================
 
-ROS node and test application for RPLIDAR
+Forked from Slamtec/rplidar_ros
 
 Visit following Website for more details about RPLIDAR:
 
