@@ -169,6 +169,8 @@ bool checkRPLIDARHealth(ILidarDriver * drv)
         ROS_ERROR("Error, cannot retrieve rplidar health code: %x", op_result);
         return false;
     }
+
+    return false;
 }
 
 bool stop_motor(std_srvs::Empty::Request &req,
@@ -229,8 +231,8 @@ int main(int argc, char * argv[]) {
     nh_private.param<int>("tcp_port", tcp_port, 20108);
     nh_private.param<std::string>("udp_ip", udp_ip, "192.168.11.2"); 
     nh_private.param<int>("udp_port", udp_port, 8089);
-    nh_private.param<std::string>("serial_port", serial_port, "/dev/ttyUSB0"); 
-    nh_private.param<int>("serial_baudrate", serial_baudrate, 115200/*256000*/);//ros run for A1 A2, change to 256000 if A3
+    nh_private.param<std::string>("rplidar_serial_port", serial_port, "/dev/ttyUSB1"); 
+    nh_private.param<int>("rplidar_serial_baudrate", serial_baudrate, 115200/*256000*/);//ros run for A1 A2, change to 256000 if A3
     nh_private.param<std::string>("frame_id", frame_id, "laser_frame");
     nh_private.param<bool>("inverted", inverted, false);
     nh_private.param<bool>("angle_compensate", angle_compensate, false);
@@ -247,6 +249,8 @@ int main(int argc, char * argv[]) {
     int ver_patch = SL_LIDAR_SDK_VERSION_PATCH;    
     ROS_INFO("RPLIDAR running on ROS package rplidar_ros, SDK Version:%d.%d.%d",ver_major,ver_minor,ver_patch);
 
+    ROS_INFO("RPLIDAR trying to connect to serial port %s.",serial_port.c_str());
+
     sl_result  op_result;
 
     // create the driver instance
@@ -260,6 +264,18 @@ int main(int argc, char * argv[]) {
     }
     else{
         _channel = *createSerialPortChannel(serial_port, serial_baudrate);
+
+        if (SL_IS_FAIL((drv)->connect(_channel))) {
+            serial_port = "/dev/ttyUSB0";            
+            _channel = *createSerialPortChannel(serial_port, serial_baudrate);
+            ROS_ERROR("Error, cannot bind to the specified serial port %s.",serial_port.c_str());
+        } 
+
+        if (SL_IS_FAIL((drv)->connect(_channel))) {
+            serial_port = "/dev/ttyUSB1";
+            _channel = *createSerialPortChannel(serial_port, serial_baudrate);
+            ROS_ERROR("Error, cannot bind to the specified serial port %s.",serial_port.c_str());
+        } 
     }
     if (SL_IS_FAIL((drv)->connect(_channel))) {
 		if(channel_type == "tcp"){
